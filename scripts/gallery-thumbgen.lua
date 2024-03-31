@@ -152,27 +152,34 @@ function thumbnail_command(input_path, width, height, take_thumbnail_at, output_
     if not with_mpv then
         out = { "ffmpeg" }
 
+        local localThumbnail = false
+
         -- local dir, file = input_path:match("^(.-)([^/]+)%.(" .. table.concat (video_extensions, "|") .. ")$")
         --          Lua pattern matching doesn't support alternation, so for now this will work only for mkv files
 
         local dir, file = input_path:match("^(.-)([^/]+)%.mkv$")
-        local thumbnail_path = dir .. ".thumbnails/" .. file .. ".jpg"
 
-        local file = io.open(thumbnail_path, "r")
-        if file then
-            file:close()
-            add({
-                "-i", thumbnail_path,
-                "-vf", vf,
-                "-map", "v:0",
-                "-f", "rawvideo",
-                "-pix_fmt", "bgra",
-                "-c:v", "rawvideo",
-                "-frames:v", "1",
-                "-y", "-loglevel", "quiet",
-                output_path
-            })
-        else
+        if dir and file then
+            local thumbnail_path = dir .. ".thumbnails/" .. file .. ".jpg"
+
+            local file = io.open(thumbnail_path, "r")
+            if file then
+                file:close()
+                localThumbnail = true
+                add({
+                    "-i", thumbnail_path,
+                    "-vf", vf,
+                    "-map", "v:0",
+                    "-f", "rawvideo",
+                    "-pix_fmt", "bgra",
+                    "-c:v", "rawvideo",
+                    "-frames:v", "1",
+                    "-y", "-loglevel", "quiet",
+                    output_path
+                })
+            end
+        end
+        if not localThumbnail then
             if is_video(input_path) then
                 if string.sub(take_thumbnail_at, -1) == "%" then
                     --if only fucking ffmpeg supported percent-style seeking
